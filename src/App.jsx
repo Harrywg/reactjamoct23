@@ -8,6 +8,7 @@ import {
   onValue,
   runTransaction,
 } from "firebase/database";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
 
 import Canvas from "./components/Canvas";
 
@@ -27,8 +28,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase();
 
-const playerId = "1";
-
 export default function App() {
   function getHeightWidth() {
     return [window.innerHeight, window.innerWidth];
@@ -36,50 +35,57 @@ export default function App() {
   const canvasRef = useRef(null);
   const [heightWidth, setHeightWidth] = useState(getHeightWidth());
   const [playerRef, setPlayerRef] = useState(null);
-  const [name, setName] = useState("");
+  const [playerId, setPlayerId] = useState(null);
 
   useEffect(() => {
-    const reference = ref(db, "players/" + playerId);
-    window.addEventListener("resize", () => setHeightWidth(getHeightWidth));
-    window.addEventListener("keydown", (e) => {
-      const pressedKey = e.key.toLowerCase();
-      if (pressedKey === "w") {
-        runTransaction(reference, (prevData) => {
-          const newPos = prevData.pos;
-          newPos[1]--;
-          return { ...prevData, pos: newPos };
-        });
-      }
-      if (pressedKey === "s") {
-        runTransaction(reference, (prevData) => {
-          const newPos = prevData.pos;
-          newPos[1]++;
-          return { ...prevData, pos: newPos };
-        });
-      }
-      if (pressedKey === "a") {
-        runTransaction(reference, (prevData) => {
-          const newPos = prevData.pos;
-          newPos[0]--;
-          return { ...prevData, pos: newPos };
-        });
-      }
-      if (pressedKey === "d") {
-        runTransaction(reference, (prevData) => {
-          const newPos = prevData.pos;
-          newPos[0]++;
-          return { ...prevData, pos: newPos };
-        });
-      }
+    const auth = getAuth();
+    signInAnonymously(auth).then(() => {
+      console.log("logged in");
     });
-    setPlayerRef(reference);
-    set(reference, {
-      pos: [0, 0, 50, 50],
-    });
-    onValue(reference, (snapshot) => {
-      const data = snapshot.val();
-      console.log(data.pos);
-      setPos(data.pos);
+    onAuthStateChanged(auth, (player) => {
+      console.log(player);
+      setPlayerId(player.uid);
+      const reference = ref(db, "players/" + player.uid);
+      window.addEventListener("resize", () => setHeightWidth(getHeightWidth));
+      window.addEventListener("keydown", (e) => {
+        const pressedKey = e.key.toLowerCase();
+        if (pressedKey === "w") {
+          runTransaction(reference, (prevData) => {
+            const newPos = prevData.pos;
+            newPos[1]--;
+            return { ...prevData, pos: newPos };
+          });
+        }
+        if (pressedKey === "s") {
+          runTransaction(reference, (prevData) => {
+            const newPos = prevData.pos;
+            newPos[1]++;
+            return { ...prevData, pos: newPos };
+          });
+        }
+        if (pressedKey === "a") {
+          runTransaction(reference, (prevData) => {
+            const newPos = prevData.pos;
+            newPos[0]--;
+            return { ...prevData, pos: newPos };
+          });
+        }
+        if (pressedKey === "d") {
+          runTransaction(reference, (prevData) => {
+            const newPos = prevData.pos;
+            newPos[0]++;
+            return { ...prevData, pos: newPos };
+          });
+        }
+      });
+      setPlayerRef(reference);
+      set(reference, {
+        pos: [0, 0, 50, 50],
+      });
+      onValue(reference, (snapshot) => {
+        const data = snapshot.val();
+        setPos(data.pos);
+      });
     });
   }, []);
 
@@ -93,6 +99,7 @@ export default function App() {
     context.fillRect(50, 50, 50, 50);
   };
 
+  if (!playerId) return <h1>Loading</h1>;
   return (
     <Canvas
       draw={draw}
