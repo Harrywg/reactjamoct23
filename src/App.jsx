@@ -7,6 +7,8 @@ import {
   set,
   onValue,
   runTransaction,
+  onDisconnect,
+  remove,
 } from "firebase/database";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
 
@@ -80,6 +82,7 @@ export default function App() {
           });
         }
       });
+
       setPlayerRef(playerRef);
       set(playerRef, {
         pos: [0, 0, 50, 50],
@@ -95,16 +98,12 @@ export default function App() {
         });
         setPlayerPositions(positions);
       });
+      onDisconnect(playerRef).remove(playerRef);
     });
   }, []);
 
   const [pos, setPos] = useState(0);
   const draw = (context) => {
-    // context.clearRect(0, 0, heightWidth[0], heightWidth[1]);
-    // context.fillStyle = "rgb(200, 0, 0)";
-    // context.fillRect(pos[0], pos[1], pos[2], pos[3]);
-    // context.fillStyle = "rgba(0, 0, 200, 0.5)";
-    // context.fillRect(50, 50, 50, 50);
     context.clearRect(0, 0, heightWidth[0], heightWidth[1]);
     playerPositions?.forEach((pos) => {
       context.fillStyle = "rgb(200, 0, 0)";
