@@ -3,3 +3,11 @@ body {
   overflow: hidden;
   background: rgb(85, 85, 85);
 }
+
+main {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  height: 100svh;
+}
